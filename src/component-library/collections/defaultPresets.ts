@@ -12,9 +12,8 @@ export const defaultPresetCollections: ComponentPresetCollection[] = [
         payload: {
           type: 'button',
           name: 'Sanwa 24mm',
-          shape: 'circle',
           size: { width: 24, height: 24 },
-          metadata: { diameter: 24, brand: 'Sanwa', model: 'OBSF-24' }
+          metadata: { diameter: 24, brand: 'Sanwa', model: 'OBSF-24', radius: 100 }
         }
       },
       {
@@ -23,9 +22,8 @@ export const defaultPresetCollections: ComponentPresetCollection[] = [
         payload: {
           type: 'button',
           name: 'Sanwa 30mm',
-          shape: 'circle',
           size: { width: 30, height: 30 },
-          metadata: { diameter: 30, brand: 'Sanwa', model: 'OBSF-30' }
+          metadata: { diameter: 30, brand: 'Sanwa', model: 'OBSF-30', radius: 100 }
         }
       },
       {
@@ -34,9 +32,8 @@ export const defaultPresetCollections: ComponentPresetCollection[] = [
         payload: {
           type: 'button',
           name: 'Kailh Choc',
-          shape: 'square',
           size: { width: 14, height: 14 },
-          metadata: { brand: 'Kailh', model: 'Choc V2', footprint: '14×14mm' }
+          metadata: { brand: 'Kailh', model: 'Choc V2', footprint: '14×14mm', radius: 0 }
         }
       }
     ]
@@ -50,8 +47,8 @@ export const defaultPresetCollections: ComponentPresetCollection[] = [
         label: 'Lever • 30×80mm',
         payload: {
           type: 'lever',
-          shape: 'rectangle',
-          size: elementSizePresets.lever
+          size: elementSizePresets.lever,
+          metadata: { radius: 12 }
         }
       }
     ]

@@ -50,10 +50,13 @@ const elementStyle = (element: ControlElement) => {
   const toPx = (value: number) => `${value * scale}px`
   const baseTransform = `translate(${toPx(element.position.x)}, ${toPx(element.position.y)}) rotate(${element.rotation}deg)`
   const transform = translateZToggle.value ? `${baseTransform} translateZ(0)` : baseTransform
+  const rawRadius = (element.metadata as Record<string, unknown>).radius
+  const radius = typeof rawRadius === 'number' ? clamp(rawRadius, 0, 100) : undefined
   return {
     width: toPx(element.size.width),
     height: toPx(element.size.height),
-    transform
+    transform,
+    ...(radius !== undefined ? { borderRadius: `${radius}%` } : {})
   }
 }
 
@@ -336,9 +339,6 @@ const handlePointerUp = (event: PointerEvent) => {
           'ring-2 ring-primary/40 border-primary/80 bg-primary/30': isSelected(element.id),
           'bg-primary/20': hoveredElementId === element.id && !isSelected(element.id),
           'opacity-25': element.metadata.hidden,
-          'rounded-full': element.shape === 'circle',
-          'rounded-none': element.shape === 'square',
-          'rounded-xl': element.shape === 'rectangle',
           'transition-all duration-150': !isDraggingElement
         }"
         :style="elementStyle(element)"

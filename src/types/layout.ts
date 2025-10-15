@@ -6,7 +6,6 @@ export const controlElementSchema = z.object({
   mapping: z.string(),
   type: z.enum(['button', 'lever', 'custom']),
   variant: z.string(),
-  shape: z.enum(['circle', 'square', 'rectangle']),
   size: z.object({
     width: z.number().nonnegative(),
     height: z.number().nonnegative()
@@ -61,7 +60,6 @@ export type ElementCreatePayload = {
   mapping?: string
   type?: ControlElement['type']
   variant?: string
-  shape?: ControlElement['shape']
   size?: ControlElement['size']
   position?: ControlElement['position']
   rotation?: number

@@ -42,13 +42,21 @@ const handleSizeChange = (axis: 'width' | 'height', value: number) => {
   })
 }
 
+const clampPercentage = (value: number) => Math.min(100, Math.max(0, value))
+
+const getRadiusPercentage = (element: ControlElement | null) => {
+  if (!element) return 0
+  const raw = (element.metadata as Record<string, unknown>).radius
+  return typeof raw === 'number' ? clampPercentage(raw) : 0
+}
+
 const handleRadiusChange = (value: number) => {
-  if (!activeElement.value || Number.isNaN(value) || value < 0) return
-  const diameter = value * 2
+  if (!activeElement.value || Number.isNaN(value)) return
+  const radius = clampPercentage(value)
   layoutStore.updateElement(activeElement.value.id, {
-    size: {
-      width: diameter,
-      height: diameter
+    metadata: {
+      ...activeElement.value.metadata,
+      radius
     }
   })
 }
@@ -147,18 +155,16 @@ const clearRelativeAnchor = () => {
         </div>
       </section>
 
-      <section
-        v-if="activeElement.shape === 'circle'"
-        class="flex flex-col gap-2"
-      >
-        <label class="text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-slate-300" for="component-radius">Radius</label>
+      <section class="flex flex-col gap-2">
+        <label class="text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-slate-300" for="component-radius">Corner Radius (%)</label>
         <input
           id="component-radius"
           class="rounded-lg border border-white/10 bg-white/10 px-3 py-2 text-sm text-slate-100 transition focus:outline-none focus:ring-2 focus:ring-primary/40"
           type="number"
-          step="0.5"
+          step="1"
           min="0"
-          :value="(activeElement.size.width ?? 0) / 2"
+          max="100"
+          :value="getRadiusPercentage(activeElement)"
           @input="(event) => handleRadiusChange(parseFloat((event.target as HTMLInputElement).value))"
         />
       </section>
