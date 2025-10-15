@@ -1,0 +1,6 @@
+name = "layoutbuilder"
+compatibility_date = "2025-10-15"
+
+[pages]
+project_name = "layoutbuilder"
+build_output_dir = "dist"
