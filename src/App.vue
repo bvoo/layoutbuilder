@@ -13,7 +13,7 @@ import StatusBar from "./components/StatusBar.vue";
   >
     <StatusBar />
   </div>
-  
+
   <div class="relative h-full w-full text-slate-100">
     <LayoutCanvas />
   </div>

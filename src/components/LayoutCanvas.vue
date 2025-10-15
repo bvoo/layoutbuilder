@@ -1,309 +1,332 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
-import { storeToRefs } from 'pinia'
-import { useLayoutStore } from '@/stores/layoutStore'
-import type { ControlElement } from '@/types/layout'
+import { computed, ref, onMounted, onBeforeUnmount } from "vue";
+import { storeToRefs } from "pinia";
+import { useLayoutStore } from "@/stores/layoutStore";
+import type { ControlElement } from "@/types/layout";
 
-const layoutStore = useLayoutStore()
-const { canvas, elements, selection, hoveredElementId, settings, activeTool, creationPreset } = storeToRefs(layoutStore)
+const layoutStore = useLayoutStore();
+const {
+  canvas,
+  elements,
+  selection,
+  hoveredElementId,
+  settings,
+  activeTool,
+  creationPreset,
+} = storeToRefs(layoutStore);
 
-const MIN_ZOOM = 0.4
-const MAX_ZOOM = 3
+const MIN_ZOOM = 0.4;
+const MAX_ZOOM = 3;
 
-const zoom = ref(1)
-const offset = ref({ x: 0, y: 0 })
-const isPanning = ref(false)
-const panState = ref({ startX: 0, startY: 0, originX: 0, originY: 0 })
-const canvasRef = ref<HTMLDivElement | null>(null)
-const boardRef = ref<HTMLDivElement | null>(null)
-const translateZToggle = ref(false)
-const draggedElementId = ref<string | null>(null)
-const dragStart = ref({ pointerX: 0, pointerY: 0, elementX: 0, elementY: 0 })
-const lastDragPosition = ref({ x: 0, y: 0 })
-const elementWasDragged = ref(false)
-const isDraggingElement = computed(() => draggedElementId.value !== null)
+const zoom = ref(1);
+const offset = ref({ x: 0, y: 0 });
+const isPanning = ref(false);
+const panState = ref({ startX: 0, startY: 0, originX: 0, originY: 0 });
+const canvasRef = ref<HTMLDivElement | null>(null);
+const boardRef = ref<HTMLDivElement | null>(null);
+const translateZToggle = ref(false);
+const draggedElementId = ref<string | null>(null);
+const dragStart = ref({ pointerX: 0, pointerY: 0, elementX: 0, elementY: 0 });
+const lastDragPosition = ref({ x: 0, y: 0 });
+const elementWasDragged = ref(false);
+const isDraggingElement = computed(() => draggedElementId.value !== null);
 
-const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
+const clamp = (value: number, min: number, max: number) =>
+  Math.min(max, Math.max(min, value));
 
-const unitScale = computed(() => (settings.value.units === 'in' ? 96 : 3.77952756))
+const unitScale = computed(() =>
+  settings.value.units === "in" ? 96 : 3.77952756,
+);
 
 const gridStyle = computed(() => {
-  const size = canvas.value.gridSize * unitScale.value * zoom.value
+  const size = canvas.value.gridSize * unitScale.value * zoom.value;
   return {
     backgroundSize: `${size}px ${size}px`,
     backgroundPosition: `${offset.value.x}px ${offset.value.y}px`,
     backgroundImage:
-      'linear-gradient(90deg, rgba(148, 163, 184, 0.12) 1px, transparent 1px), linear-gradient(rgba(148, 163, 184, 0.12) 1px, transparent 1px)'
-  }
-})
+      "linear-gradient(90deg, rgba(148, 163, 184, 0.12) 1px, transparent 1px), linear-gradient(rgba(148, 163, 184, 0.12) 1px, transparent 1px)",
+  };
+});
 
 const boardStyle = computed(() => ({
   width: `${canvas.value.width * unitScale.value}px`,
   height: `${canvas.value.height * unitScale.value}px`,
   transform: `translate(${offset.value.x}px, ${offset.value.y}px) scale(${zoom.value})`,
-  transformOrigin: 'top left',
-  willChange: 'transform'
-}))
+  transformOrigin: "top left",
+  willChange: "transform",
+}));
 
 const elementStyle = (element: ControlElement) => {
-  const scale = unitScale.value
-  const toPx = (value: number) => `${value * scale}px`
-  const baseTransform = `translate(${toPx(element.position.x)}, ${toPx(element.position.y)}) rotate(${element.rotation}deg)`
-  const transform = translateZToggle.value ? `${baseTransform} translateZ(0)` : baseTransform
-  const rawRadius = (element.metadata as Record<string, unknown>).radius
-  const radius = typeof rawRadius === 'number' ? clamp(rawRadius, 0, 100) : undefined
+  const scale = unitScale.value;
+  const toPx = (value: number) => `${value * scale}px`;
+  const baseTransform = `translate(${toPx(element.position.x)}, ${toPx(element.position.y)}) rotate(${element.rotation}deg)`;
+  const transform = translateZToggle.value
+    ? `${baseTransform} translateZ(0)`
+    : baseTransform;
+  const rawRadius = (element.metadata as Record<string, unknown>).radius;
+  const radius =
+    typeof rawRadius === "number" ? clamp(rawRadius, 0, 100) : undefined;
   return {
     width: toPx(element.size.width),
     height: toPx(element.size.height),
     transform,
-    ...(radius !== undefined ? { borderRadius: `${radius}%` } : {})
-  }
-}
+    ...(radius !== undefined ? { borderRadius: `${radius}%` } : {}),
+  };
+};
 
-const isSelected = (id: string) => selection.value.includes(id)
+const isSelected = (id: string) => selection.value.includes(id);
 
 const snapCoordinate = (value: number) => {
-  return value
-}
+  return value;
+};
 
-const clampCoordinate = (value: number) => value
+const clampCoordinate = (value: number) => value;
 
 const placeElementAtPointer = (event: MouseEvent) => {
-  const preset = creationPreset.value
-  const containerEl = canvasRef.value
-  if (!preset || !containerEl) return
+  const preset = creationPreset.value;
+  const containerEl = canvasRef.value;
+  if (!preset || !containerEl) return;
 
-  const containerRect = containerEl.getBoundingClientRect()
-  const pointerX = event.clientX - containerRect.left
-  const pointerY = event.clientY - containerRect.top
+  const containerRect = containerEl.getBoundingClientRect();
+  const pointerX = event.clientX - containerRect.left;
+  const pointerY = event.clientY - containerRect.top;
 
-  const scaledUnit = unitScale.value * zoom.value
-  const worldX = (pointerX - offset.value.x) / scaledUnit
-  const worldY = (pointerY - offset.value.y) / scaledUnit
+  const scaledUnit = unitScale.value * zoom.value;
+  const worldX = (pointerX - offset.value.x) / scaledUnit;
+  const worldY = (pointerY - offset.value.y) / scaledUnit;
 
-  const presetSize = preset.size ?? { width: 30, height: 30 }
+  const presetSize = preset.size ?? { width: 30, height: 30 };
 
-  let positionX = worldX - presetSize.width / 2
-  let positionY = worldY - presetSize.height / 2
+  let positionX = worldX - presetSize.width / 2;
+  let positionY = worldY - presetSize.height / 2;
 
-  positionX = snapCoordinate(positionX)
-  positionY = snapCoordinate(positionY)
+  positionX = snapCoordinate(positionX);
+  positionY = snapCoordinate(positionY);
 
-  positionX = clampCoordinate(positionX)
-  positionY = clampCoordinate(positionY)
+  positionX = clampCoordinate(positionX);
+  positionY = clampCoordinate(positionY);
 
   layoutStore.addElement({
     ...preset,
     position: {
       x: positionX,
-      y: positionY
-    }
-  })
-}
+      y: positionY,
+    },
+  });
+};
 
 const handleCanvasClick = (event: MouseEvent) => {
-  if (isPanning.value) return
+  if (isPanning.value) return;
 
-  if (activeTool.value === 'button' && creationPreset.value) {
-    placeElementAtPointer(event)
-    return
+  if (activeTool.value === "button" && creationPreset.value) {
+    placeElementAtPointer(event);
+    return;
   }
 
-  layoutStore.clearSelection()
-}
+  layoutStore.clearSelection();
+};
 
 const handleElementClick = (event: MouseEvent, id: string) => {
-  event.stopPropagation()
+  event.stopPropagation();
   if (elementWasDragged.value) {
-    elementWasDragged.value = false
-    return
+    elementWasDragged.value = false;
+    return;
   }
-  if (activeTool.value === 'erase') {
-    layoutStore.removeElements([id])
-    return
+  if (activeTool.value === "erase") {
+    layoutStore.removeElements([id]);
+    return;
   }
-  layoutStore.selectElement(id)
-}
+  layoutStore.selectElement(id);
+};
 
 const handleElementMouseEnter = (id: string) => {
-  layoutStore.setHoveredElement(id)
-}
+  layoutStore.setHoveredElement(id);
+};
 
 const handleElementMouseLeave = () => {
-  layoutStore.setHoveredElement(null)
-}
+  layoutStore.setHoveredElement(null);
+};
 
-const handleElementPointerDown = (event: PointerEvent, element: ControlElement) => {
-  if (event.button !== 0) return
-  if (activeTool.value === 'erase') return
+const handleElementPointerDown = (
+  event: PointerEvent,
+  element: ControlElement,
+) => {
+  if (event.button !== 0) return;
+  if (activeTool.value === "erase") return;
 
-  event.stopPropagation()
-  event.preventDefault()
+  event.stopPropagation();
+  event.preventDefault();
 
-  const target = event.currentTarget as HTMLElement
-  target.setPointerCapture(event.pointerId)
+  const target = event.currentTarget as HTMLElement;
+  target.setPointerCapture(event.pointerId);
 
   if (!isSelected(element.id)) {
-    layoutStore.selectElement(element.id)
+    layoutStore.selectElement(element.id);
   }
 
-  draggedElementId.value = element.id
-  elementWasDragged.value = false
+  draggedElementId.value = element.id;
+  elementWasDragged.value = false;
   dragStart.value = {
     pointerX: event.clientX,
     pointerY: event.clientY,
     elementX: element.position.x,
-    elementY: element.position.y
-  }
-  lastDragPosition.value = { x: element.position.x, y: element.position.y }
-}
+    elementY: element.position.y,
+  };
+  lastDragPosition.value = { x: element.position.x, y: element.position.y };
+};
 
-const handleElementPointerMove = (event: PointerEvent, element: ControlElement) => {
-  if (draggedElementId.value !== element.id) return
+const handleElementPointerMove = (
+  event: PointerEvent,
+  element: ControlElement,
+) => {
+  if (draggedElementId.value !== element.id) return;
 
-  const deltaX = event.clientX - dragStart.value.pointerX
-  const deltaY = event.clientY - dragStart.value.pointerY
-  const scaledUnit = unitScale.value * zoom.value
+  const deltaX = event.clientX - dragStart.value.pointerX;
+  const deltaY = event.clientY - dragStart.value.pointerY;
+  const scaledUnit = unitScale.value * zoom.value;
 
-  const rawX = dragStart.value.elementX + deltaX / scaledUnit
-  const rawY = dragStart.value.elementY + deltaY / scaledUnit
+  const rawX = dragStart.value.elementX + deltaX / scaledUnit;
+  const rawY = dragStart.value.elementY + deltaY / scaledUnit;
 
-  const clampedX = clampCoordinate(rawX)
-  const clampedY = clampCoordinate(rawY)
+  const clampedX = clampCoordinate(rawX);
+  const clampedY = clampCoordinate(rawY);
 
   if (Math.abs(deltaX) > 2 || Math.abs(deltaY) > 2) {
-    elementWasDragged.value = true
+    elementWasDragged.value = true;
   }
 
-  lastDragPosition.value = { x: clampedX, y: clampedY }
+  lastDragPosition.value = { x: clampedX, y: clampedY };
   layoutStore.updateElement(
     element.id,
     {
       position: {
         x: clampedX,
-        y: clampedY
-      }
+        y: clampedY,
+      },
     },
-    { skipHistory: true }
-  )
-}
+    { skipHistory: true },
+  );
+};
 
-const handleElementPointerUp = (event: PointerEvent, element: ControlElement) => {
-  if (draggedElementId.value !== element.id) return
+const handleElementPointerUp = (
+  event: PointerEvent,
+  element: ControlElement,
+) => {
+  if (draggedElementId.value !== element.id) return;
 
-  const target = event.currentTarget as HTMLElement
+  const target = event.currentTarget as HTMLElement;
   if (target.hasPointerCapture(event.pointerId)) {
-    target.releasePointerCapture(event.pointerId)
+    target.releasePointerCapture(event.pointerId);
   }
 
-  let finalX = lastDragPosition.value.x
-  let finalY = lastDragPosition.value.y
+  let finalX = lastDragPosition.value.x;
+  let finalY = lastDragPosition.value.y;
 
   if (settings.value.snapToGrid) {
-    finalX = clampCoordinate(snapCoordinate(finalX))
-    finalY = clampCoordinate(snapCoordinate(finalY))
+    finalX = clampCoordinate(snapCoordinate(finalX));
+    finalY = clampCoordinate(snapCoordinate(finalY));
   }
 
   layoutStore.updateElement(element.id, {
     position: {
       x: finalX,
-      y: finalY
-    }
-  })
+      y: finalY,
+    },
+  });
 
-  draggedElementId.value = null
-}
+  draggedElementId.value = null;
+};
 
 const handleKeyDown = (event: KeyboardEvent) => {
-  const target = event.target as HTMLElement | null
-  if (target && ['INPUT', 'TEXTAREA'].includes(target.tagName)) return
-  const isModifier = event.metaKey || event.ctrlKey
-  if (!isModifier || event.altKey) return
+  const target = event.target as HTMLElement | null;
+  if (target && ["INPUT", "TEXTAREA"].includes(target.tagName)) return;
+  const isModifier = event.metaKey || event.ctrlKey;
+  if (!isModifier || event.altKey) return;
 
-  const key = event.key.toLowerCase()
-  if (key === 'z') {
-    event.preventDefault()
+  const key = event.key.toLowerCase();
+  if (key === "z") {
+    event.preventDefault();
     if (event.shiftKey) {
-      layoutStore.redo()
+      layoutStore.redo();
     } else {
-      layoutStore.undo()
+      layoutStore.undo();
     }
-  } else if (key === 'y') {
-    event.preventDefault()
-    layoutStore.redo()
+  } else if (key === "y") {
+    event.preventDefault();
+    layoutStore.redo();
   }
-}
+};
 
 onMounted(() => {
-  window.addEventListener('keydown', handleKeyDown)
-})
+  window.addEventListener("keydown", handleKeyDown);
+});
 
 onBeforeUnmount(() => {
-  window.removeEventListener('keydown', handleKeyDown)
-})
+  window.removeEventListener("keydown", handleKeyDown);
+});
 
 const handleWheel = (event: WheelEvent) => {
-  const containerEl = canvasRef.value
-  if (!containerEl) return
+  const containerEl = canvasRef.value;
+  if (!containerEl) return;
 
-  event.preventDefault()
+  event.preventDefault();
 
-  const factor = Math.exp(-event.deltaY * 0.0015)
-  const next = clamp(zoom.value * factor, MIN_ZOOM, MAX_ZOOM)
-  if (Math.abs(next - zoom.value) < 0.0005) return
+  const factor = Math.exp(-event.deltaY * 0.0015);
+  const next = clamp(zoom.value * factor, MIN_ZOOM, MAX_ZOOM);
+  if (Math.abs(next - zoom.value) < 0.0005) return;
 
-  const containerRect = containerEl.getBoundingClientRect()
-  const pointerX = event.clientX - containerRect.left
-  const pointerY = event.clientY - containerRect.top
+  const containerRect = containerEl.getBoundingClientRect();
+  const pointerX = event.clientX - containerRect.left;
+  const pointerY = event.clientY - containerRect.top;
 
-  const currentUnitPx = unitScale.value * zoom.value
-  const worldX = (pointerX - offset.value.x) / currentUnitPx
-  const worldY = (pointerY - offset.value.y) / currentUnitPx
+  const currentUnitPx = unitScale.value * zoom.value;
+  const worldX = (pointerX - offset.value.x) / currentUnitPx;
+  const worldY = (pointerY - offset.value.y) / currentUnitPx;
 
-  const nextUnitPx = unitScale.value * next
+  const nextUnitPx = unitScale.value * next;
 
   offset.value = {
     x: pointerX - worldX * nextUnitPx,
-    y: pointerY - worldY * nextUnitPx
-  }
+    y: pointerY - worldY * nextUnitPx,
+  };
 
-  zoom.value = next
-  translateZToggle.value = !translateZToggle.value
-}
+  zoom.value = next;
+  translateZToggle.value = !translateZToggle.value;
+};
 
 const handlePointerDown = (event: PointerEvent) => {
-  if (event.button !== 2) return
-  event.preventDefault()
-  const target = event.currentTarget as HTMLElement
-  target.setPointerCapture(event.pointerId)
+  if (event.button !== 2) return;
+  event.preventDefault();
+  const target = event.currentTarget as HTMLElement;
+  target.setPointerCapture(event.pointerId);
   panState.value = {
     startX: event.clientX,
     startY: event.clientY,
     originX: offset.value.x,
-    originY: offset.value.y
-  }
-  isPanning.value = true
-}
+    originY: offset.value.y,
+  };
+  isPanning.value = true;
+};
 
 const handlePointerMove = (event: PointerEvent) => {
-  if (!isPanning.value) return
-  event.preventDefault()
-  const deltaX = event.clientX - panState.value.startX
-  const deltaY = event.clientY - panState.value.startY
+  if (!isPanning.value) return;
+  event.preventDefault();
+  const deltaX = event.clientX - panState.value.startX;
+  const deltaY = event.clientY - panState.value.startY;
   offset.value = {
     x: panState.value.originX + deltaX,
-    y: panState.value.originY + deltaY
-  }
-}
+    y: panState.value.originY + deltaY,
+  };
+};
 
 const handlePointerUp = (event: PointerEvent) => {
-  if (!isPanning.value) return
-  isPanning.value = false
-  const target = event.currentTarget as HTMLElement
+  if (!isPanning.value) return;
+  isPanning.value = false;
+  const target = event.currentTarget as HTMLElement;
   if (target.hasPointerCapture(event.pointerId)) {
-    target.releasePointerCapture(event.pointerId)
+    target.releasePointerCapture(event.pointerId);
   }
-}
+};
 </script>
 
 <template>
@@ -314,8 +337,8 @@ const handlePointerUp = (event: PointerEvent) => {
       {
         'cursor-grabbing': isPanning,
         'cursor-crosshair': !isPanning && activeTool === 'erase',
-        'cursor-grab': !isPanning && activeTool !== 'erase'
-      }
+        'cursor-grab': !isPanning && activeTool !== 'erase',
+      },
     ]"
     :style="gridStyle"
     @wheel.prevent="handleWheel"
@@ -336,10 +359,13 @@ const handlePointerUp = (event: PointerEvent) => {
         :key="element.id"
         class="absolute select-none flex items-center justify-center outline-2 outline-white px-4 py-2 text-slate-100"
         :class="{
-          'ring-2 ring-primary/40 border-primary/80 bg-primary/30': isSelected(element.id),
-          'bg-primary/20': hoveredElementId === element.id && !isSelected(element.id),
+          'ring-2 ring-primary/40 border-primary/80 bg-primary/30': isSelected(
+            element.id,
+          ),
+          'bg-primary/20':
+            hoveredElementId === element.id && !isSelected(element.id),
           'opacity-25': element.metadata.hidden,
-          'transition-all duration-150': !isDraggingElement
+          'transition-all duration-150': !isDraggingElement,
         }"
         :style="elementStyle(element)"
         data-element
@@ -352,7 +378,9 @@ const handlePointerUp = (event: PointerEvent) => {
         @pointermove="(event) => handleElementPointerMove(event, element)"
         @pointerup="(event) => handleElementPointerUp(event, element)"
       >
-        <span class="text-xs font-semibold uppercase tracking-[0.08em]">{{ element.name }}</span>
+        <span class="text-xs font-semibold uppercase tracking-[0.08em]">{{
+          element.name
+        }}</span>
       </div>
     </div>
   </div>

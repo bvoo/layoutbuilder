@@ -1,56 +1,71 @@
-import type { ComponentPresetCollection } from '../types'
-import { elementSizePresets } from '@/stores/layoutStore'
+import type { ComponentPresetCollection } from "../types";
+import { elementSizePresets } from "@/stores/layoutStore";
 
 export const defaultPresetCollections: ComponentPresetCollection[] = [
   {
-    tool: 'button',
-    defaultSelection: 'sanwa-30',
+    tool: "button",
+    defaultSelection: "sanwa-30",
     options: [
       {
-        id: 'sanwa-24',
-        label: 'Sanwa 24mm • Circle',
+        id: "sanwa-24",
+        label: "Sanwa 24mm • Circle",
         payload: {
-          type: 'button',
-          name: 'Sanwa 24mm',
+          type: "button",
+          name: "Sanwa 24mm",
           size: { width: 24, height: 24 },
-          metadata: { diameter: 24, brand: 'Sanwa', model: 'OBSF-24', radius: 100 }
-        }
+          metadata: {
+            diameter: 24,
+            brand: "Sanwa",
+            model: "OBSF-24",
+            radius: 100,
+          },
+        },
       },
       {
-        id: 'sanwa-30',
-        label: 'Sanwa 30mm • Circle',
+        id: "sanwa-30",
+        label: "Sanwa 30mm • Circle",
         payload: {
-          type: 'button',
-          name: 'Sanwa 30mm',
+          type: "button",
+          name: "Sanwa 30mm",
           size: { width: 30, height: 30 },
-          metadata: { diameter: 30, brand: 'Sanwa', model: 'OBSF-30', radius: 100 }
-        }
+          metadata: {
+            diameter: 30,
+            brand: "Sanwa",
+            model: "OBSF-30",
+            radius: 100,
+          },
+        },
       },
       {
-        id: 'kailh-choc',
-        label: 'Kailh Choc • 14×14mm',
+        id: "kailh-choc",
+        label: "Kailh Choc • 14×14mm",
         payload: {
-          type: 'button',
-          name: 'Kailh Choc',
+          type: "button",
+          name: "Kailh Choc",
           size: { width: 14, height: 14 },
-          metadata: { brand: 'Kailh', model: 'Choc V2', footprint: '14×14mm', radius: 0 }
-        }
-      }
-    ]
+          metadata: {
+            brand: "Kailh",
+            model: "Choc V2",
+            footprint: "14×14mm",
+            radius: 0,
+          },
+        },
+      },
+    ],
   },
   {
-    tool: 'lever',
-    defaultSelection: 'lever-standard',
+    tool: "lever",
+    defaultSelection: "lever-standard",
     options: [
       {
-        id: 'lever-standard',
-        label: 'Lever • 30×80mm',
+        id: "lever-standard",
+        label: "Lever • 30×80mm",
         payload: {
-          type: 'lever',
+          type: "lever",
           size: elementSizePresets.lever,
-          metadata: { radius: 12 }
-        }
-      }
-    ]
-  }
-]
+          metadata: { radius: 12 },
+        },
+      },
+    ],
+  },
+];
