@@ -26,6 +26,7 @@
     "lucide-react": "^0.545.0",
     "lucide-vue-next": "^0.545.0",
     "nanoid": "^5.1.6",
+    "pdf-lib": "^1.17.1",
     "pinia": "^3.0.3",
     "reka-ui": "^2.5.1",
     "tailwind-merge": "^3.3.1",

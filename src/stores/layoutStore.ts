@@ -10,6 +10,7 @@ import {
   type ElementCreatePayload,
   type UpdateElementPayload,
 } from "@/types/layout";
+import type { LayoutJsonPayload } from "@/lib/export";
 import {
   defaultCanvas,
   defaultSettings,
@@ -218,6 +219,17 @@ export const useLayoutStore = defineStore("layout", () => {
     commitHistorySnapshot();
   };
 
+  const loadFromJson = (payload: LayoutJsonPayload) => {
+    const parsedSettings = layoutSettingsSchema.parse(payload.settings);
+    settings.value = parsedSettings;
+    canvas.value.units = parsedSettings.units;
+    canvas.value.gridSize = parsedSettings.gridSize;
+    elements.value = payload.elements.map((element) => cloneElement(element));
+    selection.value = [];
+    markDirty();
+    commitHistorySnapshot();
+  };
+
   const addPreset = (preset: LayoutPreset) => {
     const parsed = layoutPresetSchema.parse(preset);
     presets.value.push(parsed);
@@ -300,5 +312,6 @@ export const useLayoutStore = defineStore("layout", () => {
     undo: undoHistory,
     redo: redoHistory,
     setRelativeAnchor,
+    loadFromJson,
   };
 });

@@ -19,8 +19,23 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import LayoutTransferPanel from "@/components/LayoutTransferPanel.vue";
 import type { AcceptableValue } from "reka-ui";
-import { ArrowDown, ArrowUp, Eye, EyeOff, Lock, Unlock } from "lucide-vue-next";
+import {
+  ArrowDown,
+  ArrowUp,
+  Eye,
+  EyeOff,
+  Lock,
+  Unlock,
+  RotateCcw,
+} from "lucide-vue-next";
 
 const layoutStore = useLayoutStore();
 const { elements, selection, settings, presets, activePreset } =
@@ -135,29 +150,54 @@ const toggleLocked = (id: string) => {
             Arrange and manage all elements in the layout.
           </p>
         </div>
-        <Select
-          :model-value="settings.units"
-          @update:model-value="handleUnitChange"
-        >
-          <SelectTrigger size="sm" class="w-32">
-            <SelectValue placeholder="Units" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem
-              v-for="option in unitOptions"
-              :key="option.value"
-              :value="option.value"
-            >
-              {{ option.label }}
-            </SelectItem>
-          </SelectContent>
-        </Select>
+        <div class="flex items-center gap-2">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger as-child>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  class="text-slate-300 hover:text-slate-100"
+                  @click="handleResetLayout"
+                >
+                  <RotateCcw class="size-4" />
+                  <span class="sr-only">Reset layout</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Reset layout</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <LayoutTransferPanel />
+        </div>
       </div>
 
       <div
         class="flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.12em] text-slate-300"
       >
         <div class="flex min-w-[180px] flex-1 flex-col gap-1 text-left">
+          <span>Units</span>
+          <Select
+            :model-value="settings.units"
+            @update:model-value="handleUnitChange"
+          >
+            <SelectTrigger
+              size="sm"
+              class="w-full text-left normal-case tracking-normal"
+            >
+              <SelectValue placeholder="Units" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem
+                v-for="option in unitOptions"
+                :key="option.value"
+                :value="option.value"
+              >
+                {{ option.label }}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <!-- <div class="flex min-w-[180px] flex-1 flex-col gap-1 text-left">
           <span>Preset</span>
           <Select
             :model-value="activePreset?.id ?? null"
@@ -184,7 +224,10 @@ const toggleLocked = (id: string) => {
 
         <DropdownMenu>
           <DropdownMenuTrigger as-child>
-            <Button variant="outline" size="sm" class="uppercase tracking-wide"
+            <Button
+              variant="outline"
+              size="sm"
+              class="uppercase tracking-wide"
               >Presets</Button
             >
           </DropdownMenuTrigger>
@@ -203,16 +246,7 @@ const toggleLocked = (id: string) => {
               {{ option.label }}
             </DropdownMenuItem>
           </DropdownMenuContent>
-        </DropdownMenu>
-
-        <Button
-          variant="ghost"
-          size="sm"
-          class="uppercase tracking-wide"
-          @click="handleResetLayout"
-        >
-          Reset
-        </Button>
+        </DropdownMenu> -->
       </div>
     </header>
 
