@@ -341,10 +341,16 @@ const handlePointerMove = (event: PointerEvent) => {
   event.preventDefault();
   const deltaX = event.clientX - panState.value.startX;
   const deltaY = event.clientY - panState.value.startY;
+  const nextX = offset.value.x + deltaX;
+  const nextY = offset.value.y + deltaY;
   offset.value = {
-    x: panState.value.originX + deltaX,
-    y: panState.value.originY + deltaY,
+    x: nextX,
+    y: nextY,
   };
+  panState.value.startX = event.clientX;
+  panState.value.startY = event.clientY;
+  panState.value.originX = nextX;
+  panState.value.originY = nextY;
 };
 
 const handlePointerUp = (event: PointerEvent) => {
