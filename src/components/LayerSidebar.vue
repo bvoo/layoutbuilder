@@ -13,13 +13,6 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -38,19 +31,18 @@ import {
 } from "lucide-vue-next";
 
 const layoutStore = useLayoutStore();
-const { elements, selection, settings, presets, activePreset } =
-  storeToRefs(layoutStore);
+const { elements, selection, settings } = storeToRefs(layoutStore);
 
 const activeStackIds = computed(() =>
   elements.value.map((element) => element.id),
 );
 
-const presetOptions = computed(() =>
-  presets.value.map((preset) => ({
-    label: preset.name,
-    value: preset.id,
-  })),
-);
+// const presetOptions = computed(() =>
+//   presets.value.map((preset) => ({
+//     label: preset.name,
+//     value: preset.id,
+//   })),
+// );
 
 const unitOptions: { label: string; value: "mm" | "in" }[] = [
   { label: "Millimeters", value: "mm" },
@@ -86,24 +78,24 @@ const handleUnitChange = (value: AcceptableValue) => {
   });
 };
 
-const handlePresetSelect = (presetId: string) => {
-  const preset = presets.value.find((item) => item.id === presetId);
-  if (preset) {
-    layoutStore.loadPreset(preset);
-  }
-};
+// const handlePresetSelect = (presetId: string) => {
+//   const preset = presets.value.find((item) => item.id === presetId);
+//   if (preset) {
+//     layoutStore.loadPreset(preset);
+//   }
+// };
 
-const handlePresetDropdownSelect = (key: string) => {
-  if (key === "manage-presets") {
-    return;
-  }
-  handlePresetSelect(key);
-};
+// const handlePresetDropdownSelect = (key: string) => {
+//   if (key === "manage-presets") {
+//     return;
+//   }
+//   handlePresetSelect(key);
+// };
 
-const handlePresetChange = (value: AcceptableValue) => {
-  if (typeof value !== "string") return;
-  handlePresetSelect(value);
-};
+// const handlePresetChange = (value: AcceptableValue) => {
+//   if (typeof value !== "string") return;
+//   handlePresetSelect(value);
+// };
 
 const handleResetLayout = () => {
   layoutStore.resetLayout();

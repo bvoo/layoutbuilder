@@ -54,8 +54,12 @@ export const exportPdf = async (snapshot: LayoutSnapshot, baseName: string) => {
   });
 
   const pdfBytes = await doc.save();
+  const arrayBuffer = pdfBytes.buffer.slice(
+    pdfBytes.byteOffset,
+    pdfBytes.byteOffset + pdfBytes.byteLength,
+  ) as ArrayBuffer;
   downloadBlob(
     `${baseName}.pdf`,
-    new Blob([pdfBytes], { type: "application/pdf" }),
+    new Blob([arrayBuffer as BlobPart], { type: "application/pdf" }),
   );
 };
