@@ -63,12 +63,7 @@ const snapCoordinate = (value: number) => {
   return value
 }
 
-const clampCoordinate = (value: number, elementSize: number, limit: number) => {
-  const max = Math.max(0, limit - elementSize)
-  if (value < 0) return 0
-  if (value > max) return max
-  return value
-}
+const clampCoordinate = (value: number) => value
 
 const placeElementAtPointer = (event: MouseEvent) => {
   const preset = creationPreset.value
@@ -91,8 +86,8 @@ const placeElementAtPointer = (event: MouseEvent) => {
   positionX = snapCoordinate(positionX)
   positionY = snapCoordinate(positionY)
 
-  positionX = clampCoordinate(positionX, presetSize.width, canvas.value.width)
-  positionY = clampCoordinate(positionY, presetSize.height, canvas.value.height)
+  positionX = clampCoordinate(positionX)
+  positionY = clampCoordinate(positionY)
 
   layoutStore.addElement({
     ...preset,
@@ -170,8 +165,8 @@ const handleElementPointerMove = (event: PointerEvent, element: ControlElement) 
   const rawX = dragStart.value.elementX + deltaX / scaledUnit
   const rawY = dragStart.value.elementY + deltaY / scaledUnit
 
-  const clampedX = clampCoordinate(rawX, element.size.width, canvas.value.width)
-  const clampedY = clampCoordinate(rawY, element.size.height, canvas.value.height)
+  const clampedX = clampCoordinate(rawX)
+  const clampedY = clampCoordinate(rawY)
 
   if (Math.abs(deltaX) > 2 || Math.abs(deltaY) > 2) {
     elementWasDragged.value = true
@@ -202,8 +197,8 @@ const handleElementPointerUp = (event: PointerEvent, element: ControlElement) =>
   let finalY = lastDragPosition.value.y
 
   if (settings.value.snapToGrid) {
-    finalX = clampCoordinate(snapCoordinate(finalX), element.size.width, canvas.value.width)
-    finalY = clampCoordinate(snapCoordinate(finalY), element.size.height, canvas.value.height)
+    finalX = clampCoordinate(snapCoordinate(finalX))
+    finalY = clampCoordinate(snapCoordinate(finalY))
   }
 
   layoutStore.updateElement(element.id, {
