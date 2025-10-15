@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, onBeforeUnmount } from "vue";
+import { computed, ref, onMounted, onBeforeUnmount, nextTick } from "vue";
 import { storeToRefs } from "pinia";
 import { useLayoutStore } from "@/stores/layoutStore";
 import type { ControlElement } from "@/types/layout";
@@ -23,13 +23,14 @@ const offset = ref({ x: 0, y: 0 });
 const isPanning = ref(false);
 const panState = ref({ startX: 0, startY: 0, originX: 0, originY: 0 });
 const canvasRef = ref<HTMLDivElement | null>(null);
-const boardRef = ref<HTMLDivElement | null>(null);
 const translateZToggle = ref(false);
 const draggedElementId = ref<string | null>(null);
 const dragStart = ref({ pointerX: 0, pointerY: 0, elementX: 0, elementY: 0 });
 const lastDragPosition = ref({ x: 0, y: 0 });
 const elementWasDragged = ref(false);
 const isDraggingElement = computed(() => draggedElementId.value !== null);
+
+const hasUserInteracted = ref(false);
 
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
@@ -55,6 +56,23 @@ const boardStyle = computed(() => ({
   transformOrigin: "top left",
   willChange: "transform",
 }));
+
+const centerBoard = () => {
+  const containerEl = canvasRef.value;
+  if (!containerEl) return;
+  const containerRect = containerEl.getBoundingClientRect();
+  const boardWidth = canvas.value.width * unitScale.value * zoom.value;
+  const boardHeight = canvas.value.height * unitScale.value * zoom.value;
+  offset.value = {
+    x: (containerRect.width - boardWidth) / 2,
+    y: (containerRect.height - boardHeight) / 2,
+  };
+};
+
+const handleResize = () => {
+  if (hasUserInteracted.value) return;
+  centerBoard();
+};
 
 const elementStyle = (element: ControlElement) => {
   const scale = unitScale.value;
@@ -160,6 +178,8 @@ const handleElementPointerDown = (
   const target = event.currentTarget as HTMLElement;
   target.setPointerCapture(event.pointerId);
 
+  hasUserInteracted.value = true;
+
   if (!isSelected(element.id)) {
     layoutStore.selectElement(element.id);
   }
@@ -259,10 +279,15 @@ const handleKeyDown = (event: KeyboardEvent) => {
 
 onMounted(() => {
   window.addEventListener("keydown", handleKeyDown);
+  window.addEventListener("resize", handleResize);
+  nextTick(() => {
+    centerBoard();
+  });
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener("keydown", handleKeyDown);
+  window.removeEventListener("resize", handleResize);
 });
 
 const handleWheel = (event: WheelEvent) => {
@@ -270,6 +295,8 @@ const handleWheel = (event: WheelEvent) => {
   if (!containerEl) return;
 
   event.preventDefault();
+
+  hasUserInteracted.value = true;
 
   const factor = Math.exp(-event.deltaY * 0.0015);
   const next = clamp(zoom.value * factor, MIN_ZOOM, MAX_ZOOM);
@@ -306,6 +333,7 @@ const handlePointerDown = (event: PointerEvent) => {
     originY: offset.value.y,
   };
   isPanning.value = true;
+  hasUserInteracted.value = true;
 };
 
 const handlePointerMove = (event: PointerEvent) => {
@@ -332,7 +360,7 @@ const handlePointerUp = (event: PointerEvent) => {
 <template>
   <div
     ref="canvasRef"
-    class="absolute inset-0 flex items-center justify-center overflow-hidden bg-[#2a2a2a]"
+    class="absolute inset-0 overflow-hidden bg-[#2a2a2a]"
     :class="[
       {
         'cursor-grabbing': isPanning,
@@ -351,7 +379,6 @@ const handlePointerUp = (event: PointerEvent) => {
   >
     <div
       class="relative min-h-max min-w-max rounded-2xl will-change-transform"
-      ref="boardRef"
       :style="boardStyle"
     >
       <div
