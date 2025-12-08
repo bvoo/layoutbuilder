@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { storeToRefs } from "pinia";
-import { useLayoutStore } from "../stores/layoutStore";
+import { useLayoutStore } from "@/stores/layoutStore";
+import { getToolsByGroup } from "@/plugins";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -10,50 +11,33 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  Pointer,
-  Hand,
-  Ruler,
-  CircleDot,
-  SlidersHorizontal,
-  Eraser,
-} from "lucide-vue-next";
 
 const layoutStore = useLayoutStore();
 const { activeTool } = storeToRefs(layoutStore);
 
-type ToolDefinition = {
-  id: string;
-  label: string;
-  icon: typeof Pointer;
-};
+/**
+ * Get tools from registry, organized by group.
+ */
+const toolGroups = computed(() => {
+  const byGroup = getToolsByGroup();
+  return [
+    {
+      label: "Selection",
+      tools: byGroup.selection,
+    },
+    {
+      label: "Controls",
+      tools: byGroup.controls,
+    },
+    {
+      label: "Utilities",
+      tools: byGroup.utilities,
+    },
+  ].filter((group) => group.tools.length > 0);
+});
 
-const toolGroups = computed(() => [
-  {
-    label: "Selection",
-    tools: [
-      { id: "select", label: "Select", icon: Pointer },
-      { id: "pan", label: "Pan", icon: Hand },
-      { id: "measure", label: "Measure", icon: Ruler },
-    ] satisfies ToolDefinition[],
-  },
-  {
-    label: "Controls",
-    tools: [
-      { id: "button", label: "Button", icon: CircleDot },
-      { id: "lever", label: "Lever", icon: SlidersHorizontal },
-    ] satisfies ToolDefinition[],
-  },
-  {
-    label: "Utilities",
-    tools: [
-      { id: "erase", label: "Erase", icon: Eraser },
-    ] satisfies ToolDefinition[],
-  },
-]);
-
-const handleToolSelect = (tool: string) => {
-  layoutStore.setActiveTool(tool);
+const handleToolSelect = (toolId: string) => {
+  layoutStore.setActiveTool(toolId);
 };
 </script>
 
@@ -80,11 +64,11 @@ const handleToolSelect = (tool: string) => {
                       @click="handleToolSelect(tool.id)"
                     >
                       <component :is="tool.icon" class="size-4" />
-                      <span class="sr-only">{{ tool.label }}</span>
+                      <span class="sr-only">{{ tool.name }}</span>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent class="text-xs uppercase tracking-[0.1em]">
-                    <span>{{ tool.label }}</span>
+                    <span>{{ tool.name }}</span>
                   </TooltipContent>
                 </Tooltip>
               </template>

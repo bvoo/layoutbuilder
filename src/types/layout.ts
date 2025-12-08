@@ -4,7 +4,7 @@ export const controlElementSchema = z.object({
   id: z.string(),
   name: z.string(),
   mapping: z.string(),
-  type: z.enum(["button", "lever", "custom"]),
+  type: z.string(),
   variant: z.string(),
   size: z.object({
     width: z.number().nonnegative(),

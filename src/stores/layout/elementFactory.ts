@@ -1,36 +1,37 @@
 import { nanoid } from "nanoid";
-import {
-  controlElementSchema,
-  type ControlElement,
-  type ElementCreatePayload,
-} from "@/types/layout";
+import { controlElementSchema, type ControlElement, type ElementCreatePayload } from "@/types/layout";
+import { getDefaultSize, getDefaultRadius } from "@/plugins/elementRegistry";
 import { defaultElementSizes } from "./defaults";
 
 const clampPercentage = (value: number) => Math.min(100, Math.max(0, value));
 
-const defaultRadiusByType: Record<ControlElement["type"], number> = {
-  button: 100,
-  lever: 12,
-  custom: 0,
-};
-
 const capitalize = (value: string) =>
   value.charAt(0).toUpperCase() + value.slice(1);
 
+/**
+ * Create a new element with the given payload.
+ * Uses the element registry for defaults when available.
+ */
 export const createElement = (
-  payload: ElementCreatePayload = {},
+  payload: ElementCreatePayload = {}
 ): ControlElement => {
-  const type: ControlElement["type"] = payload.type ?? "button";
+  const type = payload.type ?? "button";
+  
+  const registrySize = getDefaultSize(type);
+  const fallbackSize = defaultElementSizes[type as keyof typeof defaultElementSizes];
   const size: ControlElement["size"] =
-    payload.size ?? defaultElementSizes[type] ?? defaultElementSizes.button;
+    payload.size ?? registrySize ?? fallbackSize ?? { width: 30, height: 30 };
+  
   const metadata: Record<string, unknown> = payload.metadata
     ? { ...payload.metadata }
     : {};
+  
   const rawRadius = metadata.radius;
+  const registryRadius = getDefaultRadius(type);
   const radius =
     typeof rawRadius === "number"
       ? clampPercentage(rawRadius)
-      : defaultRadiusByType[type];
+      : registryRadius ?? 0;
   metadata.radius = radius;
 
   const base: ControlElement = {
@@ -56,6 +57,6 @@ export const cloneElement = (element: ControlElement): ControlElement =>
   });
 
 export const buildElementName = (
-  type: ControlElement["type"],
-  occurrences: number,
+  type: string,
+  occurrences: number
 ) => `${capitalize(type)} ${occurrences}`;
