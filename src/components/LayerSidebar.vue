@@ -3,6 +3,7 @@ import { computed } from "vue";
 import { storeToRefs } from "pinia";
 import { useLayoutStore } from "../stores/layoutStore";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
@@ -31,18 +32,11 @@ import {
 } from "lucide-vue-next";
 
 const layoutStore = useLayoutStore();
-const { elements, selection, settings } = storeToRefs(layoutStore);
+const { elements, selection, settings, canvas } = storeToRefs(layoutStore);
 
 const activeStackIds = computed(() =>
   elements.value.map((element) => element.id),
 );
-
-// const presetOptions = computed(() =>
-//   presets.value.map((preset) => ({
-//     label: preset.name,
-//     value: preset.id,
-//   })),
-// );
 
 const unitOptions: { label: string; value: "mm" | "in" }[] = [
   { label: "Millimeters", value: "mm" },
@@ -78,24 +72,25 @@ const handleUnitChange = (value: AcceptableValue) => {
   });
 };
 
-// const handlePresetSelect = (presetId: string) => {
-//   const preset = presets.value.find((item) => item.id === presetId);
-//   if (preset) {
-//     layoutStore.loadPreset(preset);
-//   }
-// };
+const handleSnapChange = (checked: boolean | "indeterminate") => {
+  if (checked === "indeterminate") return;
+  layoutStore.setSettings({
+    ...settings.value,
+    snapToGrid: checked,
+  });
+};
 
-// const handlePresetDropdownSelect = (key: string) => {
-//   if (key === "manage-presets") {
-//     return;
-//   }
-//   handlePresetSelect(key);
-// };
-
-// const handlePresetChange = (value: AcceptableValue) => {
-//   if (typeof value !== "string") return;
-//   handlePresetSelect(value);
-// };
+const handleGridSizeChange = (value: number) => {
+  if (Number.isNaN(value) || value <= 0) return;
+  layoutStore.setSettings({
+    ...settings.value,
+    gridSize: value,
+  });
+  layoutStore.setCanvas({
+    ...canvas.value,
+    gridSize: value,
+  });
+};
 
 const handleResetLayout = () => {
   layoutStore.resetLayout();
@@ -189,57 +184,37 @@ const toggleLocked = (id: string) => {
             </SelectContent>
           </Select>
         </div>
-        <!-- <div class="flex min-w-[180px] flex-1 flex-col gap-1 text-left">
-          <span>Preset</span>
-          <Select
-            :model-value="activePreset?.id ?? null"
-            placeholder="Select preset"
-            @update:model-value="handlePresetChange"
-          >
-            <SelectTrigger
-              size="sm"
-              class="w-full text-left normal-case tracking-normal"
-            >
-              <SelectValue placeholder="Select preset" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem
-                v-for="option in presetOptions"
-                :key="option.value"
-                :value="option.value"
-              >
-                {{ option.label }}
-              </SelectItem>
-            </SelectContent>
-          </Select>
+        <div class="flex min-w-[100px] flex-1 flex-col gap-1 text-left">
+          <span>Grid Size</span>
+          <input
+            id="grid-size"
+            class="h-9 w-full rounded-lg border border-white/10 bg-white/10 px-3 text-sm text-slate-100 normal-case tracking-normal transition focus:outline-none focus:ring-2 focus:ring-primary/40"
+            type="number"
+            step="1"
+            min="1"
+            :value="settings.gridSize"
+            @input="
+              (event) =>
+                handleGridSizeChange(
+                  parseFloat((event.target as HTMLInputElement).value)
+                )
+            "
+          />
         </div>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger as-child>
-            <Button
-              variant="outline"
-              size="sm"
-              class="uppercase tracking-wide"
-              >Presets</Button
-            >
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" class="w-48">
-            <DropdownMenuItem
-              @select="() => handlePresetDropdownSelect('manage-presets')"
-            >
-              Manage Presets
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              v-for="option in presetOptions"
-              :key="option.value"
-              @select="() => handlePresetSelect(option.value)"
-            >
-              {{ option.label }}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu> -->
       </div>
+
+      <label
+        for="snap-to-grid"
+        class="flex items-center gap-2.5 pt-1 cursor-pointer select-none"
+      >
+        <Checkbox
+          id="snap-to-grid"
+          class="shrink-0 aspect-square border-white/20 size-6"
+          :model-value="settings.snapToGrid"
+          @update:model-value="handleSnapChange"
+        />
+        <span class="text-xs text-slate-300">Snap to Grid</span>
+      </label>
     </header>
 
     <Separator class="bg-white/10" />
