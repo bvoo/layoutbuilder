@@ -11,6 +11,14 @@ import {
   useKeyboardShortcuts,
   createUndoRedoShortcuts,
 } from "@/composables";
+import MeasureOverlay from "@/components/canvas/MeasureOverlay.vue";
+import {
+  isMeasuring,
+  setMeasureStart,
+  setMeasureEnd,
+  finishMeasurement,
+  snapPointToElements,
+} from "@/plugins/tools/measureTool";
 
 const layoutStore = useLayoutStore();
 const {
@@ -159,9 +167,32 @@ const placeElementAtPointer = (event: MouseEvent) => {
   });
 };
 
+// Shared measure tool click handler
+const handleMeasureClick = (event: MouseEvent): boolean => {
+  if (activeTool.value !== "measure") return false;
+  
+  const containerEl = canvasRef.value;
+  if (!containerEl) return false;
+
+  const containerRect = containerEl.getBoundingClientRect();
+  const pointerX = event.clientX - containerRect.left;
+  const pointerY = event.clientY - containerRect.top;
+  const rawWorld = screenToWorld(pointerX, pointerY);
+  const world = snapPointToElements(rawWorld, elements.value, unitScale.value, zoom.value);
+
+  if (!isMeasuring.value) {
+    setMeasureStart(world);
+  } else {
+    setMeasureEnd(world);
+    finishMeasurement();
+  }
+  return true;
+};
+
 // Event handlers
 const handleCanvasClick = (event: MouseEvent) => {
   if (panState.isPanning.value) return;
+  if (handleMeasureClick(event)) return;
 
   if (activeTool.value === "button" && creationPreset.value) {
     placeElementAtPointer(event);
@@ -177,6 +208,9 @@ const handleElementClick = (event: MouseEvent, id: string) => {
     dragState.elementWasDragged.value = false;
     return;
   }
+  
+  if (handleMeasureClick(event)) return;
+  
   if (activeTool.value === "erase") {
     layoutStore.removeElements([id]);
     return;
@@ -228,6 +262,17 @@ const handlePointerDown = (event: PointerEvent) => {
 
 const handlePointerMove = (event: PointerEvent) => {
   panState.handlePanMove(event);
+  
+  if (activeTool.value === "measure" && isMeasuring.value) {
+    const containerEl = canvasRef.value;
+    if (!containerEl) return;
+    const containerRect = containerEl.getBoundingClientRect();
+    const pointerX = event.clientX - containerRect.left;
+    const pointerY = event.clientY - containerRect.top;
+    const rawWorld = screenToWorld(pointerX, pointerY);
+    const world = snapPointToElements(rawWorld, elements.value, unitScale.value, zoom.value);
+    setMeasureEnd(world);
+  }
 };
 
 const handlePointerUp = (event: PointerEvent) => {
@@ -250,6 +295,7 @@ onBeforeUnmount(() => {
 <template>
   <div
     ref="canvasRef"
+    data-canvas-container
     class="absolute inset-0 overflow-hidden bg-[#2a2a2a]"
     :class="[
       {
@@ -300,5 +346,13 @@ onBeforeUnmount(() => {
         }}</span>
       </div>
     </div>
+    
+    <!-- Measurement overlay -->
+    <MeasureOverlay
+      :unit-scale="unitScale"
+      :zoom="zoom"
+      :offset="offset"
+      :screen-to-world="(x: number, y: number) => screenToWorld(x, y)"
+    />
   </div>
 </template>

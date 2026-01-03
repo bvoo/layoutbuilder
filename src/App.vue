@@ -1,10 +1,19 @@
 <script setup lang="ts">
+import { computed } from "vue";
+import { storeToRefs } from "pinia";
+import { useLayoutStore } from "./stores/layoutStore";
 import ToolbarOverlay from "./components/ToolbarOverlay.vue";
 import ComponentPresetOverlay from "./components/ComponentPresetOverlay.vue";
+import MeasureSettingsPanel from "./components/canvas/MeasureSettingsPanel.vue";
 import LayerSidebar from "./components/LayerSidebar.vue";
 import LayoutCanvas from "./components/LayoutCanvas.vue";
 import ElementInspector from "./components/ElementInspector.vue";
 import StatusBar from "./components/StatusBar.vue";
+
+const layoutStore = useLayoutStore();
+const { activeTool } = storeToRefs(layoutStore);
+
+const isMeasureToolActive = computed(() => activeTool.value === "measure");
 </script>
 
 <template>
@@ -22,6 +31,7 @@ import StatusBar from "./components/StatusBar.vue";
     class="pointer-events-auto absolute left-1/2 bottom-28 z-20 flex -translate-x-1/2"
   >
     <ComponentPresetOverlay />
+    <MeasureSettingsPanel v-if="isMeasureToolActive" />
   </div>
 
   <div
@@ -42,3 +52,4 @@ import StatusBar from "./components/StatusBar.vue";
     <ElementInspector />
   </div>
 </template>
+
