@@ -1,4 +1,4 @@
-import { ref, type Ref } from "vue";
+import { ref, type Ref, watch } from "vue";
 import type {
   ControlElement,
   LayoutPreset,
@@ -6,6 +6,8 @@ import type {
   ElementCreatePayload,
 } from "@/types/layout";
 import { cloneElement } from "./elementFactory";
+
+const STORAGE_KEY = "layoutbuilder_history";
 
 export type LayoutSnapshot = {
   elements: ControlElement[];
@@ -46,6 +48,43 @@ export const createHistoryManager = ({
     selection: [...selection.value],
   });
 
+  const saveToStorage = () => {
+    try {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          history: history.value,
+          historyIndex: historyIndex.value,
+        })
+      );
+    } catch (e) {
+      console.error("Failed to save history to storage", e);
+    }
+  };
+
+  const loadFromStorage = (): boolean => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (!stored) return false;
+
+      const parsed = JSON.parse(stored);
+      if (!parsed.history || !Array.isArray(parsed.history)) return false;
+
+      history.value = parsed.history;
+      historyIndex.value = parsed.historyIndex;
+
+      // Apply the current state
+      const currentSnapshot = history.value[historyIndex.value];
+      if (currentSnapshot) {
+        applySnapshot(currentSnapshot);
+        return true;
+      }
+    } catch (e) {
+      console.error("Failed to load history from storage", e);
+    }
+    return false;
+  };
+
   const commitSnapshot = () => {
     if (isRestoring.value) return;
     const snapshot = captureSnapshot();
@@ -58,6 +97,7 @@ export const createHistoryManager = ({
       historyIndex.value = Math.max(historyIndex.value - 1, -1);
     }
     historyIndex.value = history.value.length - 1;
+    saveToStorage();
   };
 
   const applySnapshot = (snapshot: LayoutSnapshot) => {
@@ -82,6 +122,7 @@ export const createHistoryManager = ({
     const snapshot = history.value[historyIndex.value];
     if (!snapshot) return;
     applySnapshot(snapshot);
+    saveToStorage();
   };
 
   const redo = () => {
@@ -91,11 +132,13 @@ export const createHistoryManager = ({
     const snapshot = history.value[historyIndex.value];
     if (!snapshot) return;
     applySnapshot(snapshot);
+    saveToStorage();
   };
 
   const resetHistory = () => {
     history.value = [];
     historyIndex.value = -1;
+    localStorage.removeItem(STORAGE_KEY);
   };
 
   return {
@@ -108,5 +151,6 @@ export const createHistoryManager = ({
     resetHistory,
     captureSnapshot,
     applySnapshot,
+    loadFromStorage,
   };
 };

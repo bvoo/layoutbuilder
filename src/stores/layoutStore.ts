@@ -60,9 +60,13 @@ export const useLayoutStore = defineStore("layout", () => {
     commitSnapshot: commitHistorySnapshot,
     undo: undoHistory,
     redo: redoHistory,
+    loadFromStorage,
   } = historyManager;
 
-  commitHistorySnapshot();
+  // Try to load from storage, otherwise initialize default
+  if (!loadFromStorage()) {
+    commitHistorySnapshot();
+  }
 
   const selectedElements = computed(() =>
     elements.value.filter((element) => selection.value.includes(element.id)),
