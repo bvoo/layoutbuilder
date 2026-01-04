@@ -26,6 +26,11 @@ export const draggedEndpoint = ref<{
   measurementId: string;
   endpoint: "start" | "end";
 } | null>(null);
+export const draggedMeasurement = ref<{
+  measurementId: string;
+  startOffset: { x: number; y: number };
+  endOffset: { x: number; y: number };
+} | null>(null);
 
 let nextId = 1;
 function generateId(): string {
@@ -97,6 +102,48 @@ export function updateDraggedEndpoint(point: { x: number; y: number }) {
 
 export function endDragEndpoint() {
   draggedEndpoint.value = null;
+}
+
+export function startDragMeasurement(
+  measurementId: string,
+  pointerWorld: { x: number; y: number }
+) {
+  const measurement = measurements.value.find((m) => m.id === measurementId);
+  if (!measurement) return;
+
+  // Calculate offset from pointer to each endpoint
+  draggedMeasurement.value = {
+    measurementId,
+    startOffset: {
+      x: measurement.start.x - pointerWorld.x,
+      y: measurement.start.y - pointerWorld.y,
+    },
+    endOffset: {
+      x: measurement.end.x - pointerWorld.x,
+      y: measurement.end.y - pointerWorld.y,
+    },
+  };
+}
+
+export function updateDraggedMeasurement(pointerWorld: { x: number; y: number }) {
+  if (!draggedMeasurement.value) return;
+  const measurement = measurements.value.find(
+    (m) => m.id === draggedMeasurement.value!.measurementId
+  );
+  if (measurement) {
+    measurement.start = {
+      x: pointerWorld.x + draggedMeasurement.value.startOffset.x,
+      y: pointerWorld.y + draggedMeasurement.value.startOffset.y,
+    };
+    measurement.end = {
+      x: pointerWorld.x + draggedMeasurement.value.endOffset.x,
+      y: pointerWorld.y + draggedMeasurement.value.endOffset.y,
+    };
+  }
+}
+
+export function endDragMeasurement() {
+  draggedMeasurement.value = null;
 }
 
 export function getMeasurementDistance(measurement: Measurement): number {

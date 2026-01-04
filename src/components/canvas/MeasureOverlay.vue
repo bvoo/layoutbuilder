@@ -11,6 +11,10 @@ import {
   updateDraggedEndpoint,
   endDragEndpoint,
   draggedEndpoint,
+  startDragMeasurement,
+  updateDraggedMeasurement,
+  endDragMeasurement,
+  draggedMeasurement,
   clearAllMeasurements,
   snapPointToElements,
   isMeasuring,
@@ -122,6 +126,45 @@ const handleRemove = (event: MouseEvent, measurementId: string) => {
   event.stopPropagation();
   removeMeasurement(measurementId);
 };
+
+// Label drag handlers (moves entire measurement)
+const handleLabelPointerDown = (
+  event: PointerEvent,
+  measurementId: string
+) => {
+  event.stopPropagation();
+  event.preventDefault();
+
+  const containerEl = document.querySelector("[data-canvas-container]");
+  if (!containerEl) return;
+
+  const containerRect = containerEl.getBoundingClientRect();
+  const pointerX = event.clientX - containerRect.left;
+  const pointerY = event.clientY - containerRect.top;
+  const world = props.screenToWorld(pointerX, pointerY);
+
+  startDragMeasurement(measurementId, world);
+  (event.target as HTMLElement).setPointerCapture(event.pointerId);
+};
+
+const handleLabelPointerMove = (event: PointerEvent) => {
+  if (!draggedMeasurement.value) return;
+
+  const containerEl = document.querySelector("[data-canvas-container]");
+  if (!containerEl) return;
+
+  const containerRect = containerEl.getBoundingClientRect();
+  const pointerX = event.clientX - containerRect.left;
+  const pointerY = event.clientY - containerRect.top;
+  const world = props.screenToWorld(pointerX, pointerY);
+
+  updateDraggedMeasurement(world);
+};
+
+const handleLabelPointerUp = (event: PointerEvent) => {
+  (event.target as HTMLElement).releasePointerCapture(event.pointerId);
+  endDragMeasurement();
+};
 </script>
 
 <template>
@@ -160,10 +203,13 @@ const handleRemove = (event: MouseEvent, measurementId: string) => {
         @click="handleEndpointClick"
       />
 
-      <!-- Distance label -->
+      <!-- Distance label (draggable to move entire measurement) -->
       <div
-        class="pointer-events-none absolute flex -translate-x-1/2 -translate-y-full items-center gap-1.5 rounded-md bg-primary py-1 pl-2 pr-1 text-xs font-semibold text-white shadow-lg"
+        class="pointer-events-auto absolute flex -translate-x-1/2 -translate-y-full cursor-move items-center gap-1.5 rounded-md bg-primary py-1 pl-2 pr-1 text-xs font-semibold text-white shadow-lg select-none"
         :style="getLabelPosition(measurement.start, measurement.end)"
+        @pointerdown="(e) => handleLabelPointerDown(e, measurement.id)"
+        @pointermove="handleLabelPointerMove"
+        @pointerup="handleLabelPointerUp"
       >
         <span class="leading-none">{{ formatDistance(getMeasurementDistance(measurement)) }}</span>
         <button
