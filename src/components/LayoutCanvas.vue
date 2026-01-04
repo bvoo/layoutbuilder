@@ -19,6 +19,7 @@ import {
   finishMeasurement,
   snapPointToElements,
 } from "@/plugins/tools/measureTool";
+import { getCanvasComponent } from "@/plugins/elementRegistry";
 
 const layoutStore = useLayoutStore();
 const {
@@ -194,7 +195,7 @@ const handleCanvasClick = (event: MouseEvent) => {
   if (panState.isPanning.value) return;
   if (handleMeasureClick(event)) return;
 
-  if (activeTool.value === "button" && creationPreset.value) {
+  if ((activeTool.value === "button" || activeTool.value === "lever") && creationPreset.value) {
     placeElementAtPointer(event);
     return;
   }
@@ -320,7 +321,7 @@ onBeforeUnmount(() => {
       <div
         v-for="element in elements"
         :key="element.id"
-        class="absolute select-none flex items-center justify-center outline-2 outline-white px-4 py-2 text-slate-100"
+        class="absolute select-none flex items-center justify-center outline-2 outline-white text-slate-100"
         :class="{
           'ring-2 ring-primary/40 border-primary/80 bg-primary/30': isSelected(
             element.id,
@@ -341,7 +342,12 @@ onBeforeUnmount(() => {
         @pointermove="(event) => handleElementPointerMove(event, element)"
         @pointerup="(event) => handleElementPointerUp(event, element)"
       >
-        <span class="text-xs font-semibold uppercase tracking-[0.08em]">{{
+        <component
+          :is="getCanvasComponent(element)"
+          v-if="getCanvasComponent(element)"
+          :element="element"
+        />
+        <span v-else class="text-xs font-semibold uppercase tracking-[0.08em]">{{
           element.name
         }}</span>
       </div>
