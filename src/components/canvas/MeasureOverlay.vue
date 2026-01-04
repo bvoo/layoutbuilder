@@ -210,6 +210,7 @@ const handleLabelPointerUp = (event: PointerEvent) => {
         @pointerdown="(e) => handleLabelPointerDown(e, measurement.id)"
         @pointermove="handleLabelPointerMove"
         @pointerup="handleLabelPointerUp"
+        @click.stop
       >
         <span class="leading-none">{{ formatDistance(getMeasurementDistance(measurement)) }}</span>
         <button
