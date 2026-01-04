@@ -8,6 +8,7 @@ import {
   useCanvasZoom,
   useCanvasPan,
   useElementDrag,
+  usePlacementPreview,
   useKeyboardShortcuts,
   createUndoRedoShortcuts,
 } from "@/composables";
@@ -79,6 +80,13 @@ const dragState = useElementDrag({
   },
 });
 
+const previewState = usePlacementPreview({
+  activeTool,
+  creationPreset,
+  screenToWorld,
+  snapToGrid,
+});
+
 useKeyboardShortcuts({
   shortcuts: createUndoRedoShortcuts(
     () => layoutStore.undo(),
@@ -121,6 +129,11 @@ const elementStyle = (element: ControlElement) => {
     ...(radius !== undefined ? { borderRadius: `${radius}%` } : {}),
   };
 };
+
+const previewStyle = computed(() => {
+  if (!previewState.previewElement.value) return {};
+  return elementStyle(previewState.previewElement.value);
+});
 
 // Helper functions
 const isSelected = (id: string) => selection.value.includes(id);
@@ -195,7 +208,7 @@ const handleCanvasClick = (event: MouseEvent) => {
   if (panState.isPanning.value) return;
   if (handleMeasureClick(event)) return;
 
-  if ((activeTool.value === "button" || activeTool.value === "lever") && creationPreset.value) {
+  if (previewState.isDropperToolActive.value) {
     placeElementAtPointer(event);
     return;
   }
@@ -263,7 +276,13 @@ const handlePointerDown = (event: PointerEvent) => {
 
 const handlePointerMove = (event: PointerEvent) => {
   panState.handlePanMove(event);
-  
+
+  // Update placement preview position
+  const containerEl = canvasRef.value;
+  if (containerEl) {
+    previewState.updatePreviewPosition(event, containerEl);
+  }
+
   if (activeTool.value === "measure" && isMeasuring.value) {
     const containerEl = canvasRef.value;
     if (!containerEl) return;
@@ -349,6 +368,22 @@ onBeforeUnmount(() => {
         />
         <span v-else class="text-xs font-semibold uppercase tracking-[0.08em]">{{
           element.name
+        }}</span>
+      </div>
+
+      <!-- Placement preview -->
+      <div
+        v-if="previewState.previewElement.value && previewState.isPreviewVisible.value"
+        class="absolute select-none flex items-center justify-center outline-2 outline-dashed outline-primary/60 text-slate-100 pointer-events-none bg-primary/20"
+        :style="previewStyle"
+      >
+        <component
+          :is="getCanvasComponent(previewState.previewElement.value)"
+          v-if="getCanvasComponent(previewState.previewElement.value)"
+          :element="previewState.previewElement.value"
+        />
+        <span v-else class="text-xs font-semibold uppercase tracking-[0.08em] opacity-60">{{
+          previewState.previewElement.value.name
         }}</span>
       </div>
     </div>
