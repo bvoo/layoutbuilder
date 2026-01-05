@@ -101,7 +101,9 @@ export const useLayoutStore = defineStore("layout", () => {
   const addElement = (payload: ElementCreatePayload = {}) => {
     const type: ControlElement["type"] = payload.type ?? "button";
     const size: ControlElement["size"] =
-      payload.size ?? defaultElementSizes[type] ?? defaultElementSizes.button;
+      payload.size ??
+      defaultElementSizes[type] ??
+      defaultElementSizes.button ?? { width: 32, height: 32 };
     const position = payload.position ?? {
       x: Math.max(0, (canvas.value.width - size.width) / 2),
       y: Math.max(0, (canvas.value.height - size.height) / 2),

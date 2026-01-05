@@ -1,4 +1,4 @@
-import { ref, type Ref, watch } from "vue";
+import { ref, type Ref } from "vue";
 import type {
   ControlElement,
   LayoutPreset,
