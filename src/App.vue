@@ -41,7 +41,7 @@ const isMeasureToolActive = computed(() => activeTool.value === "measure");
   </div>
 
   <div
-    class="pointer-events-auto absolute left-6 top-6 z-20 hidden w-80 lg:block"
+    class="pointer-events-auto absolute left-6 top-6 bottom-6 z-20 hidden w-80 lg:block"
   >
     <LayerSidebar />
   </div>
