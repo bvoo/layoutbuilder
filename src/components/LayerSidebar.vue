@@ -223,7 +223,7 @@ const toggleLocked = (id: string) => {
       <ul class="flex flex-col gap-2">
         <li v-for="element in elements" :key="element.id">
           <button
-            class="group flex w-full items-center justify-between rounded-xl border border-white/5 bg-white/5 px-4 py-3 text-left text-sm text-slate-100 transition hover:border-primary/40 hover:bg-primary/10"
+            class="group relative flex w-full items-center justify-between rounded-xl border border-white/5 bg-white/5 px-4 py-3 text-left text-sm text-slate-100 transition hover:border-primary/40 hover:bg-primary/10"
             :class="{
               'border-primary/50 bg-primary/10 shadow-lg shadow-primary/10':
                 isSelected(element.id),
@@ -231,52 +231,78 @@ const toggleLocked = (id: string) => {
             type="button"
             @click="handleSelect(element.id)"
           >
-            <div class="flex flex-col gap-1">
-              <span class="text-sm font-semibold text-slate-100">{{
+            <div class="flex flex-1 min-w-0 flex-col gap-1 pr-8">
+              <span class="truncate text-sm font-semibold text-slate-100">{{
                 element.name
               }}</span>
-              <span class="text-xs text-slate-300"
-                >{{ element.type }} - {{ element.mapping || "unmapped" }}</span
-              >
+              <span class="truncate text-xs text-slate-300">
+                {{ element.type }}
+                <template v-if="element.type !== 'lever'">
+                  - {{ element.mapping || "unmapped" }}
+                </template>
+              </span>
             </div>
-            <div class="flex items-center gap-1.5">
+            <div
+              class="absolute right-2 flex items-center gap-1 p-1 rounded-lg backdrop-blur-sm transition-all sm:opacity-0 sm:group-hover:opacity-100"
+              :class="{
+                'opacity-100 bg-transparent backdrop-blur-none':
+                  element.metadata.hidden || element.metadata.locked,
+              }"
+            >
               <Button
                 variant="ghost"
                 size="icon-sm"
-                class="text-slate-300 hover:text-slate-100"
+                class="rounded-md transition-all"
+                :class="{
+                  'opacity-100 bg-white/10 text-slate-100':
+                    element.metadata.hidden,
+                  'text-slate-400 hover:bg-white/10 hover:text-slate-100':
+                    !element.metadata.hidden,
+                }"
                 @click.stop="toggleVisibility(element.id)"
               >
                 <component
                   :is="element.metadata.hidden ? EyeOff : Eye"
-                  class="size-4"
+                  class="size-3.5"
                 />
               </Button>
               <Button
                 variant="ghost"
                 size="icon-sm"
-                class="text-slate-300 hover:text-slate-100"
+                class="rounded-md transition-all"
+                :class="{
+                  'opacity-100 bg-white/10 text-slate-100':
+                    element.metadata.locked,
+                  'text-slate-400 hover:bg-white/10 hover:text-slate-100':
+                    !element.metadata.locked,
+                }"
                 @click.stop="toggleLocked(element.id)"
               >
                 <component
                   :is="element.metadata.locked ? Lock : Unlock"
-                  class="size-4"
+                  class="size-3.5"
                 />
               </Button>
+
+              <div
+                class="hidden h-4 w-px bg-white/10 sm:block"
+              />
+
               <Button
                 variant="ghost"
                 size="icon-sm"
-                class="text-slate-300 hover:text-slate-100"
+                class="rounded-md text-slate-400 transition-all hover:bg-white/10 hover:text-slate-100"
                 @click.stop="moveElement(element.id, 'up')"
               >
-                <ArrowUp class="size-4" />
+                <ArrowUp class="size-3.5" />
               </Button>
               <Button
                 variant="ghost"
                 size="icon-sm"
-                class="text-slate-300 hover:text-slate-100"
+                class="rounded-md text-slate-400 transition-all hover:bg-white/10 hover:text-slate-100"
                 @click.stop="moveElement(element.id, 'down')"
               >
-                <ArrowDown class="size-4" />
+                <ArrowDown class="size-3.5" />
               </Button>
             </div>
           </button>
